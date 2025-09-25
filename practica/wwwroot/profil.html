@@ -1,0 +1,176 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e0e7ff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 2rem;
+            color: #1e40af;
+            font-weight: 700;
+        }
+
+        .profile-info {
+            background: white;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+
+        dl {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            row-gap: 1rem;
+            column-gap: 1.5rem;
+        }
+
+        dt {
+            font-weight: 700;
+            color: #2563eb;
+        }
+
+        dd {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .feedback {
+            margin-top: 2rem;
+            font-size: 1.1rem;
+            display: flex;
+            gap: 2rem;
+            color: #444;
+        }
+
+        .buttons {
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            justify-content: start; /* чтобы кнопки были с левой стороны */
+            gap: 1rem; /* расстояние между кнопками */
+            padding: 0 3rem;
+        }
+
+            .buttons a {
+                padding: 0.5rem 1.2rem;
+                background-color: #2563eb;
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+                transition: background-color 0.3s ease;
+                text-decoration: none; /* убрать подчеркивание */
+                display: inline-flex; /* для корректного отображения */
+                align-items: center;
+                justify-content: center;
+            }
+
+                .buttons a:hover {
+                    background-color: #1e40af;
+                    text-decoration: none;
+                }
+
+        button#logoutBtn {
+            padding: 0.5rem 1.2rem;
+            background-color: #2563eb;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+            transition: background-color 0.3s ease;
+            margin-left: 1rem; /* отступ слева от второй кнопки */
+        }
+
+            button#logoutBtn:hover {
+                background-color: #1e40af;
+            }
+    </style>
+</head>
+<body>
+    <h1>Профиль пользователя</h1>
+
+    <div class="profile-info" id="profile" style="display:none;">
+        <dl>
+            <dt>Email:</dt>
+            <dd id="email"></dd>
+            <dt>Никнейм:</dt>
+            <dd id="nickname"></dd>
+            <dt>Роль:</dt>
+            <dd id="role"></dd>
+        </dl>
+        <div class="feedback">
+            <span>Позитивная отзывы: <span id="positive-feedback"></span></span>
+            <span>Негативная отзывы: <span id="negative-feedback"></span></span>
+        </div>
+    </div>
+
+    <div class="buttons">
+        <a href="https://localhost:7080/home.html">На главную</a>
+        <button id="logoutBtn">Выйти</button>
+    </div>
+
+    <script>
+        async function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('nickname');
+            window.location.href = 'https://localhost:7080/vxod.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', e => {
+            e.preventDefault();
+            logout();
+        });
+
+        async function loadProfile() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'https://localhost:7080/vxod.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/User/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки профиля');
+                }
+                const user = await response.json();
+
+                document.getElementById('email').textContent = user.email;
+                document.getElementById('nickname').textContent = user.nickName;
+                document.getElementById('role').textContent = user.role;
+                document.getElementById('positive-feedback').textContent = user.positiveFeedback;
+                document.getElementById('negative-feedback').textContent = user.negativeFeedback;
+
+                document.getElementById('profile').style.display = 'block';
+
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+                logout();
+            }
+        }
+
+        window.onload = loadProfile;
+    </script>
+</body>
+</html>

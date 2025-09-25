@@ -7,7 +7,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-string key = "hel_me";
+string key = "hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me_hel_me";
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
@@ -72,6 +72,21 @@ app.MapGet("/User", async (ApplicationContext db) =>
 {
     return await db.List_User.ToListAsync();
 });
+app.MapGet("/User/nickname/{nickname}", [Authorize] async (string nickname, ApplicationContext db) =>
+{
+    var user = await db.List_User.FirstOrDefaultAsync(u => u.NickName.ToLower() == nickname.ToLower());
+    if (user == null) return Results.NotFound(new { error = "Пользователь не найден" });
+
+    return Results.Ok(new
+    {
+        user.Id,
+        user.Email,
+        user.NickName,
+        user.Role,
+        user.PositiveFeedback,
+        user.NegativeFeedback
+    });
+});
 app.MapPost("/User/register", async (RegisterUserDTO dto, ApplicationContext db) =>
 {
     if (!EmailValidator.ValidateEmail(dto.Email))
@@ -93,6 +108,35 @@ app.MapPost("/User/register", async (RegisterUserDTO dto, ApplicationContext db)
     await db.List_User.AddAsync(user);
     await db.SaveChangesAsync();
     return Results.Ok(new { message = "Пользователь успешно зарегистрирован" });
+});
+app.MapPost("/User/{id}/feedback", [Authorize] async (string id, FeedbackDTO feedbackDto, HttpContext context, ApplicationContext db) =>
+{
+    var currentUserId = context.User.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
+    if (currentUserId == null)
+        return Results.Unauthorized();
+
+    if (currentUserId == id)
+        return Results.BadRequest(new { error = "Нельзя ставить отзыв самому себе" });
+
+    var user = await db.List_User.FindAsync(id);
+    if (user == null)
+        return Results.NotFound(new { error = "Пользователь не найден" });
+
+    if (feedbackDto.TypeFeedback == "positive")
+    {
+        user.PositiveFeedback++;
+    }
+    else if (feedbackDto.TypeFeedback == "negative")
+    {
+        user.NegativeFeedback++;
+    }
+    else
+    {
+        return Results.BadRequest(new { error = "Неверный тип отзыва" });
+    }
+
+    await db.SaveChangesAsync();
+    return Results.Ok( new { message = "Отзыв успешно добавлен" });
 });
 app.MapPut("/update/User/{Id}", async (string Id, UserDTO dto, ApplicationContext db) =>
 {
@@ -123,26 +167,7 @@ app.MapDelete("/delete/User/{Id}", async (string Id, ApplicationContext db) =>
     return Results.Ok(new { message = "Пользователь удалён" });
 });
 // JWT token
-app.Map("/login/{username}", async (UserRequest reg, ApplicationContext db) =>
-{
-    var user = await db.List_User.FirstOrDefaultAsync(s => s.Email == reg.Email);
-    var claims = new List<Claim>
-    {
-        new Claim("Id", user.Id.ToString()),
-        new Claim("Role", user.Role),
-        new Claim("Email", user.Email)
-    };
-    // создаем JWT-токен
-    var jwt = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.UtcNow.Add(TimeSpan.FromMinutes(20)),
-            signingCredentials: new SigningCredentials(
-                new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-                SecurityAlgorithms.HmacSha256));
-
-    return new JwtSecurityTokenHandler().WriteToken(jwt);
-});
-app.MapPost("/login/{username}", async (UserRequest reg, ApplicationContext db) =>
+app.MapPost("/login", async (UserRequest reg, ApplicationContext db) =>
 {
     var user = await db.List_User.FirstOrDefaultAsync(s => s.Email == reg.Email);
     if (user == null)
@@ -172,5 +197,24 @@ app.MapPost("/login/{username}", async (UserRequest reg, ApplicationContext db) 
 
     return Results.Json(response);
 });
-app.MapGet("/data", [Authorize] () => new { message = "Hello World!" });
+app.MapGet("/User/me", [Authorize] async (HttpContext context, ApplicationContext db) =>
+{
+    var userId = context.User.Claims.FirstOrDefault(c => c.Type == "Id")?.Value;
+    if (userId == null)
+        return Results.Unauthorized();
+
+    var user = await db.List_User.FindAsync(userId);
+    if (user == null)
+        return Results.NotFound();
+
+    return Results.Ok(new
+    {
+        user.Email,
+        user.NickName,
+        user.Role,
+        user.PositiveFeedback,
+        user.NegativeFeedback
+    });
+});
+
 app.Run();

@@ -6,93 +6,114 @@
     <title>Регистрация пользователя</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e0e7ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
         }
 
         .register-container {
-            max-width: 400px;
-            margin: auto;
-            padding: 25px;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 350px;
         }
 
         h2 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
+            color: #2563eb;
+            font-weight: 700;
         }
 
         label {
             display: block;
-            margin-top: 15px;
-            font-weight: bold;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #333;
         }
 
-        input[type="email"], input[type="text"], input[type="password"] {
+        input[type="email"],
+        input[type="text"],
+        input[type="password"] {
             width: 100%;
-            padding: 8px 12px;
-            margin-top: 6px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
             box-sizing: border-box;
+            transition: border-color 0.3s ease;
         }
+
+            input[type="email"]:focus,
+            input[type="text"]:focus,
+            input[type="password"]:focus {
+                border-color: #2563eb;
+                outline: none;
+                box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+            }
 
         button {
             width: 100%;
-            margin-top: 25px;
-            padding: 12px;
-            background-color: #007bff;
+            margin-top: 1.8rem;
+            background-color: #2563eb;
             border: none;
             color: white;
-            font-size: 16px;
-            border-radius: 5px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.9rem;
+            border-radius: 8px;
             cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+            transition: background-color 0.3s ease;
         }
 
             button:hover {
-                background-color: #0056b3;
+                background-color: #1e40af;
             }
 
         .message {
-            margin-top: 20px;
+            margin-top: 1rem;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
         }
 
-        .success {
-            color: green;
-        }
+            .message.success {
+                color: #22c55e;
+            }
 
-        .error {
-            color: red;
-        }
+            .message.error {
+                color: #dc2626;
+            }
     </style>
 </head>
 <body>
     <div class="register-container">
-        <h2>Регистрация пользователя</h2>
+        <h2>Регистрация</h2>
         <form id="registerForm">
             <label for="email">Email:</label>
-            <input type="email" id="email" name="email" placeholder="Введите email" required />
+            <input type="email" id="email" name="email" placeholder="email@example.com" required />
 
             <label for="nickName">Никнейм:</label>
-            <input type="text" id="nickName" name="nickName" placeholder="Введите никнейм" required />
+            <input type="text" id="nickName" name="nickName" placeholder="Никнейм" required />
 
             <label for="password">Пароль:</label>
-            <input type="password" id="password" name="password" placeholder="Введите пароль" required />
+            <input type="password" id="password" name="password" placeholder="Пароль" required />
 
             <button type="submit">Зарегистрироваться</button>
         </form>
-        <div class="message" id="message"></div>
+        <p id="message" class="message"></p>
     </div>
 
     <script>
         document.getElementById('registerForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-
             const email = this.email.value.trim();
             const nickName = this.nickName.value.trim();
             const password = this.password.value.trim();
@@ -103,30 +124,30 @@
             try {
                 const response = await fetch('/User/register', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                        // Если необходимо, добавьте Authorization заголовок с JWT токеном:
-                        // 'Authorization': 'Bearer ' + your_jwt_token
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ Email: email, NickName: nickName, Password: password })
                 });
+
+                console.log('Response status:', response.status);
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    messageDiv.textContent = result.message;
+                    messageDiv.textContent = result.message || 'Регистрация успешна';
                     messageDiv.classList.add('success');
                     this.reset();
+                    // Перенаправление после успешной регистрации
+                    window.location.href = "https://localhost:7080/vxod.html";
                 } else {
                     messageDiv.textContent = result.error || 'Ошибка регистрации';
                     messageDiv.classList.add('error');
                 }
             } catch (error) {
-                messageDiv.textContent = 'Ошибка сети или сервера: ' + error.message;
+                console.error('Fetch error:', error);
+                messageDiv.textContent = 'Ошибка сети или сервера';
                 messageDiv.classList.add('error');
             }
         });
     </script>
-
 </body>
 </html>
