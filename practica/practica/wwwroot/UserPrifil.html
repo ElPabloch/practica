@@ -1,0 +1,211 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e0e7ff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 2rem;
+            color: #1e40af;
+            font-weight: 700;
+        }
+
+        #profile {
+            background: white;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+            #profile p {
+                font-size: 1.1rem;
+                margin: 0.8rem 0;
+            }
+
+            #profile button {
+                margin: 1rem 1rem 0 0;
+                padding: 0.6rem 1.2rem;
+                font-size: 1rem;
+                border-radius: 12px;
+                border: none;
+                background-color: #2563eb;
+                color: #fff;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+                #profile button:hover {
+                    background-color: #1e40af;
+                }
+
+        .buttons {
+            max-width: 600px;
+            margin: 0 auto 3rem auto;
+            display: flex;
+            justify-content: flex-start;
+            gap: 1rem;
+            padding: 0 3rem;
+        }
+
+            .buttons a {
+                padding: 0.5rem 1.2rem;
+                background-color: #2563eb;
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+                transition: background-color 0.3s ease;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+                .buttons a:hover {
+                    background-color: #1e40af;
+                    text-decoration: none;
+                }
+
+        button#logoutBtn {
+            padding: 0.5rem 1.2rem;
+            background-color: #2563eb;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+            transition: background-color 0.3s ease;
+        }
+
+            button#logoutBtn:hover {
+                background-color: #1e40af;
+            }
+    </style>
+</head>
+<body>
+    <h1>Профиль пользователя</h1>
+    <div id="profile" style="display:none;">
+        <p>Email: <span id="email"></span></p>
+        <p>Никнейм: <span id="nickname"></span></p>
+        <p>Роль: <span id="role"></span></p>
+        <p>Позитивная обратная связь: <span id="positive-feedback"></span></p>
+        <p>Негативная обратная связь: <span id="negative-feedback"></span></p>
+
+        <button id="btnPositive">Поставить позитивный отзыв</button>
+        <button id="btnNegative">Поставить негативный отзыв</button>
+    </div>
+    <div class="buttons">
+        <a href="https://localhost:7080/home.html">На главную</a>
+        <button id="logoutBtn">Выйти</button>
+    </div>
+
+    <script>
+        async function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('nickname');
+            window.location.href = 'https://localhost:7080/vxod.html';
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', e => {
+            e.preventDefault();
+            logout();
+        });
+
+        async function loadUserProfile(nickname) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'https://localhost:7080/vxod.html';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/User/nickname/${encodeURIComponent(nickname)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!resp.ok) throw new Error('Пользователь не найден');
+
+                const user = await resp.json();
+
+                document.getElementById('email').textContent = user.email;
+                document.getElementById('nickname').textContent = user.nickName;
+                document.getElementById('role').textContent = user.role;
+                document.getElementById('positive-feedback').textContent = user.positiveFeedback;
+                document.getElementById('negative-feedback').textContent = user.negativeFeedback;
+
+                document.getElementById('profile').style.display = 'block';
+
+                window.currentUserId = user.id;
+            } catch (e) {
+                alert(e.message);
+                window.location.href = 'https://localhost:7080/home.html';
+            }
+        }
+
+        async function addFeedback(TypeFeedback) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Пожалуйста, войдите');
+                window.location.href = 'https://localhost:7080/vxod.html';
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/User/${window.currentUserId}/feedback`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ TypeFeedback })
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Ошибка');
+                alert('Отзыв добавлен');
+                if (TypeFeedback === 'positive') {
+                    document.getElementById('positive-feedback').textContent = parseInt(document.getElementById('positive-feedback').textContent) + 1;
+                } else {
+                    document.getElementById('negative-feedback').textContent = parseInt(document.getElementById('negative-feedback').textContent) + 1;
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+        }
+
+        document.getElementById('btnPositive').addEventListener('click', () => addFeedback('positive'));
+        document.getElementById('btnNegative').addEventListener('click', () => addFeedback('negative'));
+
+        window.onload = () => {
+            const params = {};
+            window.location.search.substring(1).split("&").forEach(pair => {
+                const [key, value] = pair.split("=");
+                params[decodeURIComponent(key)] = decodeURIComponent(value);
+            });
+            if (params.nick) {
+                loadUserProfile(params.nick);
+            } else {
+                alert('Никнейм не указан');
+                window.location.href = 'https://localhost:7080/home.html';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+﻿<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Вход</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e0e7ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .login-container {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+            input[type="email"]:focus,
+            input[type="password"]:focus {
+                border-color: #2563eb;
+                outline: none;
+                box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+            }
+
+        button {
+            width: 100%;
+            margin-top: 1.8rem;
+            background-color: #2563eb;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+            transition: background-color 0.3s ease;
+        }
+
+            button:hover {
+                background-color: #1e40af;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Вход в аккаунт</h2>
+        <input id="emailInput" type="email" placeholder="Email" />
+        <input id="passwordInput" type="password" placeholder="Пароль" />
+        <button id="loginBtn">Войти</button>
+    </div>
+
+    <script>
+        document.getElementById('loginBtn').onclick = async () => {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+
+            let resp = await fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!resp.ok) {
+                alert('Неверные данные для входа');
+                return;
+            }
+
+            const data = await resp.json();
+            localStorage.setItem('token', data.access_token);
+
+            resp = await fetch('/User/me', {
+                headers: { 'Authorization': 'Bearer ' + data.access_token }
+            });
+            if (!resp.ok) {
+                alert('Ошибка загрузки профиля');
+                return;
+            }
+
+            const user = await resp.json();
+
+            localStorage.setItem('nickname', user.nickName);
+
+            window.location.href = 'https://localhost:7080/home.html';
+        };
+
+        window.onload = () => {
+            if (localStorage.getItem('token')) {
+                window.location.href = 'https://localhost:7080/home.html';
+            }
+        };
+    </script>
+</body>

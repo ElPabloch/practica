@@ -1,0 +1,1 @@
+record class FeedbackDTO(string TypeFeedback);

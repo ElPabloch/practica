@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Регистрация пользователя</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e0e7ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .register-container {
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 350px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+        label {
+            display: block;
+            margin-top: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="email"],
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 0.8rem;
+            margin-top: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+
+            input[type="email"]:focus,
+            input[type="text"]:focus,
+            input[type="password"]:focus {
+                border-color: #2563eb;
+                outline: none;
+                box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+            }
+
+        button {
+            width: 100%;
+            margin-top: 1.8rem;
+            background-color: #2563eb;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(37, 99, 235, 0.5);
+            transition: background-color 0.3s ease;
+        }
+
+            button:hover {
+                background-color: #1e40af;
+            }
+
+        .message {
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 600;
+        }
+
+            .message.success {
+                color: #22c55e;
+            }
+
+            .message.error {
+                color: #dc2626;
+            }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>Регистрация</h2>
+        <form id="registerForm">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" placeholder="email@example.com" required />
+
+            <label for="nickName">Никнейм:</label>
+            <input type="text" id="nickName" name="nickName" placeholder="Никнейм" required />
+
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" placeholder="Пароль" required />
+
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        <p id="message" class="message"></p>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const email = this.email.value.trim();
+            const nickName = this.nickName.value.trim();
+            const password = this.password.value.trim();
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = '';
+            messageDiv.className = 'message';
+
+            try {
+                const response = await fetch('/User/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Email: email, NickName: nickName, Password: password })
+                });
+
+                console.log('Response status:', response.status);
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.textContent = result.message || 'Регистрация успешна';
+                    messageDiv.classList.add('success');
+                    this.reset();
+                    window.location.href = "https://localhost:7080/vxod.html";
+                } else {
+                    messageDiv.textContent = result.error || 'Ошибка регистрации';
+                    messageDiv.classList.add('error');
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                messageDiv.textContent = 'Ошибка сети или сервера';
+                messageDiv.classList.add('error');
+            }
+        });
+    </script>
+</body>
+</html>

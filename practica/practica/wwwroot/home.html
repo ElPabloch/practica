@@ -1,0 +1,163 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #e0e7ff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #007acc;
+            color: white;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 1rem;
+        }
+
+            header a {
+                color: white;
+                margin-left: 1rem;
+                text-decoration: none;
+                font-weight: bold;
+                cursor: pointer;
+            }
+
+        main {
+            flex-grow: 1;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        #searchSection {
+            border-radius: 10px;
+            padding: 1.5rem;
+            max-width: 400px;
+            margin: 2rem auto;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+            #searchSection h2 {
+                color: #007acc;
+                margin-bottom: 1rem;
+                font-weight: 600;
+            }
+
+            #searchSection input {
+                width: 68%;
+                padding: 0.5rem;
+                font-size: 1rem;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+
+            #searchSection button {
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+                margin-left: 1rem;
+                cursor: pointer;
+                background-color: #007acc;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                transition: background-color 0.3s;
+            }
+
+                #searchSection button:hover {
+                    background-color: #005fa3;
+                }
+    </style>
+</head>
+<body>
+    <header>
+        <span id="nicknameDisplay" style="margin-right: 1rem;"></span>
+        <a href="https://localhost:7080/profil.html">Профиль</a>
+        <a href="#" id="logoutBtn">Выйти</a>
+    </header>
+
+    <main>
+        <h1>Добро пожаловать!</h1>
+        <p>Это главная страница приложения.</p>
+
+        <section id="searchSection">
+            <h2>Поиск профиля по никнейму</h2>
+            <input type="text" id="searchInput" placeholder="Введите никнейм" />
+            <button id="searchBtn">Найти</button>
+        </section>
+    </main>
+
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            alert("Пожалуйста, войдите в систему");
+            window.location.href = 'https://localhost:7080/vxod.html';
+        }
+
+        (async () => {
+            let nickname = localStorage.getItem('nickname');
+            if (!nickname) {
+                try {
+                    const resp = await fetch('/User/me', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (!resp.ok) throw new Error();
+                    const user = await resp.json();
+                    nickname = user.nickName;
+                    localStorage.setItem('nickname', nickname);
+                } catch {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('nickname');
+                    window.location.href = 'https://localhost:7080/vxod.html';
+                }
+            }
+            document.getElementById('nicknameDisplay').textContent = nickname || "Пользователь";
+        })();
+
+        // Обработка выхода
+        document.getElementById('logoutBtn').addEventListener('click', e => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('nickname');
+            window.location.href = 'https://localhost:7080/vxod.html';
+        });
+
+        // Поиск по никнейму и переход на страницу чужого профиля
+        document.getElementById('searchBtn').onclick = async () => {
+            const nickname = document.getElementById('searchInput').value.trim();
+            if (!nickname) {
+                alert("Введите никнейм для поиска");
+                return;
+            }
+
+            try {
+                const resp = await fetch('/User/nickname/' + encodeURIComponent(nickname), {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!resp.ok) {
+                    alert("Пользователь с таким никнеймом не найден");
+                    return;
+                }
+
+                // Если нашли, то переходим на страницу чужого профиля
+                window.location.href = 'https://localhost:7080/userprifil.html?nick=' + encodeURIComponent(nickname);
+            } catch (error) {
+                alert("Ошибка при поиске пользователя");
+            }
+        };
+    </script>
+</body>
+</html>
